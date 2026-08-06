@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenWriter — WordStar Minimalist</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+
+    <style>
+        /* ------------------------------------------------------------------
+           1. DESIGN SYSTEM & VARIABLES
+        ------------------------------------------------------------------ */
+        :root {
+            --bg-color: #12141c;       /* Deep midnight indigo */
+            --text-color: #e2e8f0;     /* Soft off-white */
+            --muted-color: #64748b;    /* Slate gray for UI controls */
+            --accent-color: #38bdf8;   /* Cloud sync blue */
+            --font-mono: 'JetBrains Mono', monospace;
+            --canvas-width: 680px;     /* Golden width for narrative focus */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-mono);
+            font-size: 18px;
+            line-height: 1.7;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Prevents the whole window from scrolling */
+        }
+
+        /* ------------------------------------------------------------------
+           2. THE CHROME FADE EFFECT
+           The 'distraction-free' class will be managed by JavaScript later.
+           For now, hovering over the window brings the UI back instantly.
+        ------------------------------------------------------------------ */
+        .chrome-element {
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            opacity: 1;
+        }
+
+        /* When the user is active/hovering, ensure UI is visible */
+        body:hover .chrome-element,
+        body:focus-within .chrome-element {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Preview look: Mildly dim them when typing begins (simulated via class) */
+        .distraction-free .chrome-element {
+            opacity: 0;
+            pointer-events: none; /* Prevents clicking invisible buttons */
+        }
+
+        /* ------------------------------------------------------------------
+           3. LAYOUT ZONES
+        ------------------------------------------------------------------ */
+        
+        /* Top Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            width: 100%;
+            font-size: 0.85rem;
+            color: var(--muted-color);
+        }
+
+        .doc-title {
+            color: var(--text-color);
+            border: none;
+            background: transparent;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            font-weight: bold;
+            outline: none;
+            width: 200px;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-color);
+            border-radius: 50%;
+        }
+
+        /* The Main Canvas Workspace */
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            overflow-y: auto; /* Scrollbar stays confined to the text block */
+            padding: 40px 20px;
+        }
+
+        .editor-container {
+            width: 100%;
+            max-width: var(--canvas-width);
+            height: 100%;
+        }
+
+        /* The actual writing area */
+        .editor {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--text-color);
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            line-height: 1.8;
+            resize: none;
+            white-space: pre-wrap;
+        }
+
+        /* Bottom Footer */
+        footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            width: 100%;
+            font-size: 0.80rem;
+            color: var(--muted-color);
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .stats-left, .stats-right {
+            display: flex;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="chrome-element">
+        <div class="doc-left">
+            <input type="text" class="doc-title" value="untitled.txt" spellcheck="false">
+            <span>• Auto-saved</span>
+        </div>
+        <div class="sync-status">
+            <div class="sync-dot"></div>
+            <span>Cloud: Ready</span>
+        </div>
+    </header>
+
+    <main>
+        <div class="editor-container">
+            <div class="editor" contenteditable="true" spellcheck="true" placeholder="Start your story here...">Start typing your narrative here. Notice how the line wraps comfortably, keeping your eyes centered on the screen just like a vintage modern typewriter...</div>
+        </div>
+    </main>
+
+    <footer class="chrome-element">
+        <div class="stats-left">
+            <span>Words: <strong id="word-count">24</strong></span>
+            <span>Characters: <strong id="char-count">152</strong></span>
+        </div>
+        <div class="stats-right">
+            <span id="read-time">1 min read</span>
+        </div>
+    </footer>
+
+    <script>
+        const body = document.body;
+        let idleTimer;
+
+        // Function to hide the UI elements when the user is actively writing
+        function resetIdleTimer() {
+            body.classList.remove('distraction-free');
+            clearTimeout(idleTimer);
+            
+            // If mouse stops moving or typing stops for 2.5 seconds, fade UI out
+            idleTimer = setTimeout(() => {
+                // Only hide if the user is actively focusing inside the editor
+                if (document.activeElement.classList.contains('editor')) {
+                    body.classList.add('distraction-free');
+                }
+            }, 2500);
+        }
+
+        // Listen for mouse moves and keystrokes to manage the layout fade
+        window.addEventListener('mousemove', resetIdleTimer);
+        window.addEventListener('keydown', resetIdleTimer);
+    </script>
+</body>
+</html>
